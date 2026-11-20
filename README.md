@@ -14,7 +14,8 @@ Type (or say) something like *"I am in Dhaka and want to go to Cox's Bazar for 2
 - **Destination info**: photo and intro from Wikipedia
 - **Budget bar** that tracks transport + hotel against your total
 - **Trip pass** with QR code, downloadable as an image
-- **Accounts**: sign up / log in, saved trips, local guide registration
+- **Accounts**: sign up / log in, saved trips
+- **Verified guides**: local guides apply with their NID, an admin reviews each application, and travellers only see verified guides
 
 ## Tech stack
 
@@ -47,6 +48,8 @@ Create `.env.local` in the project root:
 ```env
 GROQ_API_KEY=your_groq_key
 RAPIDAPI_KEY=your_rapidapi_key
+# Optional: accounts that can review guide applications (comma-separated)
+ADMIN_EMAILS=you@example.com
 ```
 
 Run the dev server:
@@ -85,7 +88,8 @@ app/
     parse-prompt/     Planner endpoint (parses the prompt and streams the plan)
     auth/             Signup, login, logout, current user
     trips/            Saved trips
-    guides/           Guide registration
+    guides/           Guide applications and the verified guide listing
+    admin/guides/     Admin review of guide applications
 lib/
   planner/            Groq, Agoda, railway, weather and Wikipedia integrations
   db.ts               SQLite schema and connection
@@ -97,6 +101,7 @@ data/railway/         Bangladesh Railway timetable and fare snapshot
 
 - Bus and flight options, and the sample local guides, are AI-generated estimates, not live bookings.
 - Hotel prices come from Agoda at search time and may change.
+- A "verified" guide is one an admin approved after checking their details. NID numbers are checked for format only, not against a government record.
 
 ## Credits
 

@@ -12,6 +12,7 @@ import HotelsMap from './components/HotelsMap';
 import TripPass from './components/TripPass';
 import MyTrips from './components/MyTrips';
 import BecomeGuideModal from './components/BecomeGuideModal';
+import GuideReviewModal from './components/GuideReviewModal';
 import type { DestinationInfo, Hotel, ItineraryDay, LocalGuide, PlanEvent, TransportOption, TripRecord, TripRequest, Weather } from '@/lib/types';
 import { readPlanStream } from '@/lib/planStream';
 import { taka } from '@/lib/format';
@@ -74,9 +75,10 @@ export default function Home() {
   const [myTripsOpen, setMyTripsOpen] = useState(false);
   const [guideHours, setGuideHours] = useState(4);
 
-  // Real guides who registered for this destination; sample guides are only shown when there are none.
+  // Verified guides for this destination; sample guides are only shown when there are none.
   const [registeredGuides, setRegisteredGuides] = useState<LocalGuide[]>([]);
   const [becomeGuideOpen, setBecomeGuideOpen] = useState(false);
+  const [guideReviewOpen, setGuideReviewOpen] = useState(false);
   const [guidesVersion, setGuidesVersion] = useState(0);
 
   const [step, setStep] = useState<Step>('transport');
@@ -356,6 +358,15 @@ export default function Home() {
         >
           🧭 Become a guide
         </button>
+        {user?.isAdmin && (
+          <button
+            onClick={() => setGuideReviewOpen(true)}
+            className="text-white text-sm font-semibold hover:underline whitespace-nowrap"
+            style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
+          >
+            🛡️ Review guides
+          </button>
+        )}
         <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full pl-4 pr-1.5 py-1.5 shadow-xl border-2 border-white/50 text-sm">
           {user ? (
             <>
@@ -816,7 +827,7 @@ export default function Home() {
               <div className="mb-6 text-center bg-amber-50/95 rounded-2xl border-2 border-amber-200 px-5 py-3 shadow-xl">
                 <p className="text-amber-800 font-bold text-sm">🚧 Sample guides, launching soon</p>
                 <p className="text-amber-700 text-xs mt-0.5">
-                  No guides have registered in {request.destination} yet. These profiles are AI-written examples, not real people. Requesting one adds an estimate to your plan only.
+                  There are no verified guides in {request.destination} yet. These profiles are AI-written examples, not real people. Requesting one adds an estimate to your plan only.
                 </p>
               </div>
             )}
@@ -839,7 +850,10 @@ export default function Home() {
                             ? <SourceTag source="bongoprompt" />
                             : <SourceTag source="ai" label="Sample · launching soon" />}
                         </div>
-                        <p className="text-purple-600 text-sm font-semibold">{guide.specialty}</p>
+                        <p className="text-purple-600 text-sm font-semibold">
+                          {guide.specialty}
+                          {guide.kind === 'registered' && !!guide.experience_years && ` · ${guide.experience_years} yr${guide.experience_years === 1 ? '' : 's'} guiding`}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -853,6 +867,9 @@ export default function Home() {
                   {expandedGuideId === guide.id && (
                     <div className="p-5 pt-0 border-t-2 border-slate-200 bg-slate-50 animate-in slide-in-from-top-2 duration-300">
                       <p className="text-slate-700 mb-4 italic">&ldquo;{guide.bio}&rdquo;</p>
+                      {guide.kind === 'registered' && (
+                        <p className="text-green-700 text-xs font-semibold mb-4">✓ Identity checked by BongoPrompt against this guide&apos;s national ID.</p>
+                      )}
                       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div className="bg-white px-4 py-2 rounded-lg border-2 border-slate-200 shadow-sm">
                           <p className="text-slate-600 text-xs font-semibold">Rate</p>
@@ -941,6 +958,14 @@ export default function Home() {
           defaultCity={request?.destination ?? ''}
           onClose={() => setBecomeGuideOpen(false)}
           onSaved={() => setGuidesVersion((v) => v + 1)}
+        />
+      )}
+
+      {/* 🛡️ ADMIN: REVIEW GUIDE APPLICATIONS */}
+      {guideReviewOpen && user?.isAdmin && (
+        <GuideReviewModal
+          onClose={() => setGuideReviewOpen(false)}
+          onReviewed={() => setGuidesVersion((v) => v + 1)}
         />
       )}
 

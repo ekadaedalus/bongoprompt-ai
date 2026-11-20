@@ -9,6 +9,21 @@ export interface PublicUser {
   id: number;
   name: string;
   email: string;
+  /** Admins review guide applications. Set by the ADMIN_EMAILS environment variable. */
+  isAdmin: boolean;
+}
+
+/** ADMIN_EMAILS is a comma-separated list, e.g. "you@example.com, teammate@example.com". */
+function isAdminEmail(email: string): boolean {
+  return (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(email.toLowerCase());
+}
+
+export function toPublicUser(id: number, name: string, email: string): PublicUser {
+  return { id, name, email, isAdmin: isAdminEmail(email) };
 }
 
 export function hashPassword(password: string): string {
@@ -58,5 +73,5 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
     )
     .get(token, Date.now());
 
-  return row ? { id: Number(row.id), name: String(row.name), email: String(row.email) } : null;
+  return row ? toPublicUser(Number(row.id), String(row.name), String(row.email)) : null;
 }

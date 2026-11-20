@@ -70,8 +70,36 @@ export interface LocalGuide {
   rating?: number;
   bio: string;
   phone?: string;
-  /** "sample" = AI-written placeholder, "registered" = a real person who signed up. */
+  /** "sample" = AI-written placeholder, "registered" = a real person whose application was verified. */
   kind: "sample" | "registered";
+  experience_years?: number;
+}
+
+/** A guide application is reviewed by an admin before travellers can see it. */
+export type GuideStatus = "pending" | "verified" | "rejected";
+
+/** A guide's own view of their application. The NID is masked. */
+export interface GuideApplication {
+  name: string;
+  phone: string;
+  city: string;
+  specialty: string;
+  hourly_rate: number;
+  experience_years: number;
+  about: string;
+  nid_masked: string;
+  status: GuideStatus;
+  /** The reviewer's reason, shown when the application was rejected. */
+  review_note: string;
+}
+
+/** An application as the reviewing admin sees it, with the full NID and account email. */
+export interface GuideReview extends Omit<GuideApplication, "nid_masked"> {
+  id: number;
+  nid: string;
+  email: string;
+  account_name: string;
+  submitted_at: string;
 }
 
 export interface WeatherDay {

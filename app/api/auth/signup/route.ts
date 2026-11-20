@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { hashPassword, startSession } from "@/lib/auth";
+import { hashPassword, startSession, toPublicUser } from "@/lib/auth";
 
 export async function POST(req: Request) {
   const { name, email, password } = await req.json().catch(() => ({}));
@@ -27,5 +27,5 @@ export async function POST(req: Request) {
 
   const id = Number(lastInsertRowid);
   await startSession(id);
-  return NextResponse.json({ user: { id, name: cleanName, email: cleanEmail } });
+  return NextResponse.json({ user: toPublicUser(id, cleanName, cleanEmail) });
 }

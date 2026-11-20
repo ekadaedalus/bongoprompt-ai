@@ -41,7 +41,8 @@ function open() {
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS trips_by_user ON trips(user_id, created_at);
-    -- Real local guides who signed up through "Become a guide". One profile per account.
+    -- Real local guides who applied through "Become a guide". One profile per account.
+    -- Travellers only see a profile once an admin has verified it (status = 'verified').
     CREATE TABLE IF NOT EXISTS guides (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id     INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -51,10 +52,33 @@ function open() {
       city_key    TEXT NOT NULL, -- normalized city for matching, e.g. "coxs bazar"
       specialty   TEXT NOT NULL,
       hourly_rate INTEGER NOT NULL,
-      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      nid              TEXT NOT NULL DEFAULT '', -- national ID number; shown to admins only
+      experience_years INTEGER NOT NULL DEFAULT 0,
+      about            TEXT NOT NULL DEFAULT '',
+      status           TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected')),
+      review_note      TEXT NOT NULL DEFAULT '', -- the reviewer's reason when rejected
+      submitted_at     TEXT NOT NULL DEFAULT '', -- last time the guide sent the profile for review
+      reviewed_at      TEXT
     );
     CREATE INDEX IF NOT EXISTS guides_by_city ON guides(city_key);
   `);
+
+  // Migration: guides who signed up before verification existed get the review columns.
+  // They start as "pending" with no NID, so they are hidden until they add one and are verified.
+  const guideColumns = db.prepare("PRAGMA table_info(guides)").all().map((c) => String(c.name));
+  if (!guideColumns.includes("status")) {
+    db.exec(`
+      ALTER TABLE guides ADD COLUMN nid TEXT NOT NULL DEFAULT '';
+      ALTER TABLE guides ADD COLUMN experience_years INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE guides ADD COLUMN about TEXT NOT NULL DEFAULT '';
+      ALTER TABLE guides ADD COLUMN status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected'));
+      ALTER TABLE guides ADD COLUMN review_note TEXT NOT NULL DEFAULT '';
+      ALTER TABLE guides ADD COLUMN submitted_at TEXT NOT NULL DEFAULT '';
+      ALTER TABLE guides ADD COLUMN reviewed_at TEXT;
+      UPDATE guides SET submitted_at = created_at;
+    `);
+  }
 
   // Migration: trips created before trip status existed get the column, with every row "upcoming".
   const tripColumns = db.prepare("PRAGMA table_info(trips)").all().map((c) => String(c.name));
